@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "python-log-viewer"
+version = "0.1.0"
+description = "A beautiful, real-time log viewer with a web UI. Works with Django, Flask, and FastAPI."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+authors = [{ name = "Sujan Gainju", email = "sujangainju01@gmail.com" }]
+keywords = ["log", "viewer", "logging", "monitoring", "django", "flask", "fastapi", "web-ui"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Logging",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Framework :: Django",
+    "Framework :: Flask",
+    "Framework :: FastAPI",
+]
+
+[project.optional-dependencies]
+django = ["django>=3.2"]
+flask = ["flask>=2.0"]
+fastapi = ["fastapi>=0.68", "uvicorn>=0.15"]
+all = ["django>=3.2", "flask>=2.0", "fastapi>=0.68", "uvicorn>=0.15"]
+
+[project.urls]
+Homepage = "https://github.com/imsujan276/python-log-viewer"
+Repository = "https://github.com/imsujan276/python-log-viewer"
+Issues = "https://github.com/imsujan276/python-log-viewer/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/python_log_viewer"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/python_log_viewer/", "README.md", "LICENSE"]

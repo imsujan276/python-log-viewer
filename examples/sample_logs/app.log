@@ -1,0 +1,27 @@
+2026-02-18 08:00:01,123 - myapp.server - INFO: Application started on port 8000
+2026-02-18 08:00:01,456 - myapp.db - INFO: Database connection established (PostgreSQL 16.2)
+2026-02-18 08:00:02,789 - myapp.cache - INFO: Redis cache connected at localhost:6379
+2026-02-18 08:00:05,012 - myapp.auth - DEBUG: Loading authentication middleware
+2026-02-18 08:00:05,345 - myapp.auth - DEBUG: JWT secret key loaded from environment
+2026-02-18 08:01:12,678 - myapp.views - INFO: GET /api/users 200 (12ms)
+2026-02-18 08:01:13,901 - myapp.views - INFO: GET /api/products 200 (45ms)
+2026-02-18 08:02:45,234 - myapp.views - WARNING: Slow query detected: GET /api/reports took 3200ms
+2026-02-18 08:03:01,567 - myapp.auth - INFO: User admin@example.com logged in from 192.168.1.10
+2026-02-18 08:05:22,890 - myapp.tasks - INFO: Background task 'send_emails' started (batch_id=4821)
+2026-02-18 08:05:23,123 - myapp.tasks - INFO: Sent 15/150 emails...
+2026-02-18 08:05:30,456 - myapp.tasks - INFO: Sent 150/150 emails. Batch complete.
+2026-02-18 08:10:05,789 - myapp.views - ERROR: Unhandled exception in GET /api/orders/999
+Traceback (most recent call last):
+  File "/app/views/orders.py", line 42, in get_order
+    order = Order.objects.get(pk=order_id)
+  File "/app/models.py", line 18, in get
+    raise ObjectDoesNotExist("Order matching query does not exist.")
+app.exceptions.ObjectDoesNotExist: Order matching query does not exist.
+2026-02-18 08:12:33,012 - myapp.views - INFO: POST /api/orders 201 (89ms)
+2026-02-18 08:15:44,345 - myapp.cache - WARNING: Cache miss rate above 30% for key prefix 'product_*'
+2026-02-18 08:20:01,678 - myapp.db - ERROR: Connection pool exhausted (max=20, active=20, waiting=5)
+2026-02-18 08:20:02,901 - myapp.db - INFO: Connection pool recovered after 1.2s
+2026-02-18 08:25:15,234 - myapp.auth - WARNING: Failed login attempt for user unknown@example.com from 10.0.0.55
+2026-02-18 08:30:00,567 - myapp.tasks - INFO: Scheduled cleanup task started
+2026-02-18 08:30:05,890 - myapp.tasks - INFO: Deleted 42 expired sessions
+2026-02-18 08:30:06,123 - myapp.tasks - DEBUG: Next cleanup scheduled at 09:30:00

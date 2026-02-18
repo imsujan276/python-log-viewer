@@ -1,0 +1,8 @@
+2026-02-18 08:00:00,100 - celery.worker - INFO: celery@worker-1 ready (concurrency=4, pool=prefork)
+2026-02-18 08:05:22,200 - celery.worker - INFO: Received task: myapp.tasks.send_emails[abc-123]
+2026-02-18 08:05:30,300 - celery.worker - INFO: Task myapp.tasks.send_emails[abc-123] succeeded in 8.1s
+2026-02-18 08:15:00,400 - celery.worker - INFO: Received task: myapp.tasks.generate_report[def-456]
+2026-02-18 08:15:45,500 - celery.worker - WARNING: Task myapp.tasks.generate_report[def-456] took 45s (soft limit: 30s)
+2026-02-18 08:15:45,600 - celery.worker - INFO: Task myapp.tasks.generate_report[def-456] succeeded in 45.1s
+2026-02-18 08:30:00,700 - celery.beat - INFO: Scheduler: Sending due task 'cleanup-sessions' (myapp.tasks.cleanup)
+2026-02-18 08:30:05,800 - celery.worker - INFO: Task myapp.tasks.cleanup[ghi-789] succeeded in 5.1s
