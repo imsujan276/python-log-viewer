@@ -4,10 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "python-log-viewer"
-version = "0.1.0"
+version = "1.0.0"
 description = "A beautiful, real-time log viewer with a web UI. Works with Django, Flask, and FastAPI."
 readme = "README.md"
 license = { text = "MIT" }
+license-files = []
 requires-python = ">=3.9"
 authors = [{ name = "Sujan Gainju", email = "sujangainju01@gmail.com" }]
 keywords = ["log", "viewer", "logging", "monitoring", "django", "flask", "fastapi", "web-ui"]

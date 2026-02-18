@@ -4,7 +4,7 @@ A beautiful, real-time log viewer with a dark-themed web UI. Browse, search, fil
 
 Integrates seamlessly with **Django**, **Flask**, and **FastAPI**.
 
-![Log Viewer Preview](screenshots/preview.png)
+![Log Viewer Preview](https://raw.githubusercontent.com/imsujan276/python-log-viewer/main/screenshots/preview.png)
 
 ---
 
