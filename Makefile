@@ -2,6 +2,7 @@ twine:
 	pip install build twine
 
 build:
+	rm -rf dist/*
 	python -m build
 
 test-publish:
