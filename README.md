@@ -1,5 +1,5 @@
 # python-log-viewer 
-[![PyPI Downloads](https://static.pepy.tech/personalized-badge/python-log-viewer?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=Downloads)](https://pepy.tech/projects/python-log-viewer)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/python-log-viewer?period=total&units=NONE&left_color=BLACK&right_color=GREEN&left_text=Downloads)](https://pepy.tech/projects/python-log-viewer)
 
 A beautiful, real-time log viewer with a dark-themed web UI. Browse, search, filter, clear, and delete log files — all from your browser.
 
