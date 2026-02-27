@@ -76,17 +76,18 @@ def create_log_viewer_blueprint(
 
     # ---- routes ---------------------------------------------------------
 
+    _html_page = render_html(
+        base_url=url_prefix,
+        auto_refresh=auto_refresh,
+        refresh_timer=refresh_timer,
+        auto_scroll=auto_scroll,
+        colorize=colorize,
+    )
+
     @bp.route("/", methods=["GET"])
     @_auth_required
     def index():
-        html = render_html(
-            base_url=url_prefix,
-            auto_refresh=auto_refresh,
-            refresh_timer=refresh_timer,
-            auto_scroll=auto_scroll,
-            colorize=colorize,
-        )
-        return Response(html, content_type="text/html")
+        return Response(_html_page, content_type="text/html")
 
     @bp.route("/api/files", methods=["GET"])
     @_auth_required
@@ -102,6 +103,7 @@ def create_log_viewer_blueprint(
             lines=int(request.args.get("lines", "500")),
             level=request.args.get("level", ""),
             search=request.args.get("search", ""),
+            page=int(request.args.get("page", "1")),
         )
         return jsonify(result)
 
@@ -120,5 +122,11 @@ def create_log_viewer_blueprint(
         if directory.clear_file(file_param):
             return jsonify({"success": True, "message": f"{os.path.basename(file_param)} cleared"})
         return jsonify({"success": False, "error": "Invalid or missing file"}), 404
+
+    # Catch-all for deep-link support (e.g. /logs/workers/celery.log)
+    @bp.route("/<path:file_path>", methods=["GET"])
+    @_auth_required
+    def index_with_file(file_path):
+        return Response(_html_page, content_type="text/html")
 
     return bp

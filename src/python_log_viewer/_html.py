@@ -290,7 +290,6 @@ _TEMPLATE = r"""<!DOCTYPE html>
     flex: 1;
     overflow-y: auto;
     padding: 12px 20px;
-    scroll-behavior: smooth;
   }
   .log-line {
     padding: 3px 0;
@@ -326,6 +325,42 @@ _TEMPLATE = r"""<!DOCTYPE html>
     color: var(--text-muted);
     font-size: 14px;
   }
+
+  /* ---- Log loader ---- */
+  .log-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-muted);
+    font-size: 14px;
+    gap: 10px;
+  }
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---- Pagination ---- */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .pagination .btn { padding: 4px 12px; font-size: 12px; }
+  .pagination .page-info { white-space: nowrap; }
 
   /* ---- Sidebar toggle button (small screens) ---- */
   .sidebar-toggle {
@@ -428,6 +463,13 @@ _TEMPLATE = r"""<!DOCTYPE html>
     <div id="log-container">
       <div class="empty-state" id="empty-state">Select a log file to view</div>
     </div>
+    <div class="pagination" id="pagination" style="display:none;">
+      <button class="btn" id="btn-first" onclick="goPage(1)" title="First page (newest)">&#8676; First</button>
+      <button class="btn" id="btn-prev" onclick="goPage(currentPage - 1)">&#8592; Previous</button>
+      <span class="page-info" id="page-info">Page 1 of 1</span>
+      <button class="btn" id="btn-next" onclick="goPage(currentPage + 1)">Next &#8594;</button>
+      <button class="btn" id="btn-last" onclick="goPage(totalPages)" title="Last page (oldest)">Last &#8677;</button>
+    </div>
   </div>
 </div>
 
@@ -475,6 +517,9 @@ _TEMPLATE = r"""<!DOCTYPE html>
   let refreshTimer = null;
   let activeFile = '';
   let pendingAction = null;
+  let currentPage = 1;
+  let totalPages = 1;
+  let forceScrollToBottom = false;
 
   function toggleSidebar() {
     sidebarEl.classList.toggle('open');
@@ -483,6 +528,23 @@ _TEMPLATE = r"""<!DOCTYPE html>
   function closeSidebar() {
     sidebarEl.classList.remove('open');
     sidebarOverlay.classList.remove('active');
+  }
+
+  function getFileFromURL() {
+    const path = window.location.pathname;
+    let basePath = (BASE || '').replace(/\/+$/, '');
+    if (path === basePath || path === basePath + '/') return '';
+    if (path.startsWith(basePath + '/')) {
+      return decodeURIComponent(path.substring(basePath.length + 1));
+    }
+    return '';
+  }
+
+  function showLogLoader() {
+    container.innerHTML = '<div class="log-loader"><div class="spinner"></div><span>Loading\u2026</span></div>';
+    emptyState.style.display = 'none';
+    var pg = document.getElementById('pagination');
+    if (pg) pg.style.display = 'none';
   }
 
   function formatBytes(bytes) {
@@ -511,6 +573,14 @@ _TEMPLATE = r"""<!DOCTYPE html>
       text = text.replace(new RegExp('(' + escaped + ')', 'gi'), '<span class="highlight">$1</span>');
     }
     return text;
+  }
+
+  function scrollToBottomNow() {
+    // Run twice (now + next frame) to account for layout changes such as pagination.
+    container.scrollTop = container.scrollHeight;
+    requestAnimationFrame(() => {
+      container.scrollTop = container.scrollHeight;
+    });
   }
 
   function toggleFolder(btn) {
@@ -569,15 +639,22 @@ _TEMPLATE = r"""<!DOCTYPE html>
       fileListEl.innerHTML = html;
 
       if (!activeFile && data.files.length) {
-        selectFile(data.files[0].name);
+        var urlFile = getFileFromURL();
+        if (urlFile && data.files.some(function(f){ return f.name === urlFile; })) {
+          selectFile(urlFile, false);
+        } else {
+          selectFile(data.files[0].name);
+        }
       }
     } catch (e) {
       console.error('Failed to fetch file list:', e);
     }
   }
 
-  function selectFile(name) {
+  function selectFile(name, pushHistory) {
+    if (pushHistory === undefined) pushHistory = true;
     activeFile = name;
+    currentPage = 1;
     document.querySelectorAll('.file-item').forEach(el => {
       el.classList.toggle('active', el.dataset.file === name);
     });
@@ -585,6 +662,11 @@ _TEMPLATE = r"""<!DOCTYPE html>
     logPaneHeader.style.display = name ? 'flex' : 'none';
     updateActionButtons();
     closeSidebar();
+    if (pushHistory) {
+      var newUrl = (BASE || '') + '/' + name.split('/').map(encodeURIComponent).join('/');
+      history.pushState({file: name}, '', newUrl);
+    }
+    showLogLoader();
     fetchLogs();
   }
 
@@ -596,8 +678,10 @@ _TEMPLATE = r"""<!DOCTYPE html>
   async function fetchLogs() {
     if (!activeFile) return;
     try {
+      const shouldForceScrollToBottom = forceScrollToBottom;
+      forceScrollToBottom = false;
       const lines = parseInt(linesLimit.value);
-      const params = new URLSearchParams({ file: activeFile, lines: lines });
+      const params = new URLSearchParams({ file: activeFile, lines: lines, page: currentPage });
       const level = levelFilter.value;
       const search = searchInput.value.trim();
       if (level) params.set('level', level);
@@ -606,12 +690,15 @@ _TEMPLATE = r"""<!DOCTYPE html>
       const resp = await fetch(BASE + '/api/content?' + params.toString());
       const data = await resp.json();
       lineCountEl.textContent = data.total;
+      totalPages = data.total_pages || 1;
+      currentPage = data.page || 1;
 
       if (!data.lines.length) {
         container.innerHTML = '';
         emptyState.style.display = 'flex';
         emptyState.textContent = 'No log entries found.';
         container.appendChild(emptyState);
+        updatePagination();
         return;
       }
 
@@ -625,12 +712,36 @@ _TEMPLATE = r"""<!DOCTYPE html>
         return '<div class="log-line' + (lvl ? ' level-' + lvl : '') + '">' + formatLine(line) + '</div>';
       }).join('');
 
-      if (autoScrollCb.checked && wasNearBottom) {
-        container.scrollTop = container.scrollHeight;
+      if (shouldForceScrollToBottom) {
+        // Page navigation should land at the newest visible entry immediately.
+        scrollToBottomNow();
+      } else if (autoScrollCb.checked && wasNearBottom && currentPage === 1) {
+        scrollToBottomNow();
       }
+
+      updatePagination();
     } catch (e) {
       console.error('Failed to fetch logs:', e);
     }
+  }
+
+  function updatePagination() {
+    var pg = document.getElementById('pagination');
+    if (totalPages <= 1) { pg.style.display = 'none'; return; }
+    pg.style.display = 'flex';
+    document.getElementById('page-info').textContent = 'Page ' + currentPage + ' of ' + totalPages;
+    document.getElementById('btn-first').disabled = currentPage <= 1;
+    document.getElementById('btn-prev').disabled = currentPage <= 1;
+    document.getElementById('btn-next').disabled = currentPage >= totalPages;
+    document.getElementById('btn-last').disabled = currentPage >= totalPages;
+  }
+
+  function goPage(p) {
+    if (p < 1 || p > totalPages) return;
+    currentPage = p;
+    forceScrollToBottom = true;
+    showLogLoader();
+    fetchLogs();
   }
 
   function startRefresh() {
@@ -649,10 +760,11 @@ _TEMPLATE = r"""<!DOCTYPE html>
   let searchTimeout;
   searchInput.addEventListener('input', () => {
     clearTimeout(searchTimeout);
+    currentPage = 1;
     searchTimeout = setTimeout(fetchLogs, 400);
   });
-  levelFilter.addEventListener('change', fetchLogs);
-  linesLimit.addEventListener('change', fetchLogs);
+  levelFilter.addEventListener('change', () => { currentPage = 1; fetchLogs(); });
+  linesLimit.addEventListener('change', () => { currentPage = 1; fetchLogs(); });
   refreshSelect.addEventListener('change', startRefresh);
 
   function updateActionButtons() {
@@ -709,6 +821,7 @@ _TEMPLATE = r"""<!DOCTYPE html>
           activeFileLabel.textContent = '';
           logPaneHeader.style.display = 'none';
           updateActionButtons();
+          history.pushState({}, '', BASE || '/');
         }
         await fetchFiles();
         if (activeFile) fetchLogs();
@@ -718,6 +831,7 @@ _TEMPLATE = r"""<!DOCTYPE html>
           emptyState.textContent = 'Select a log file to view';
           container.appendChild(emptyState);
           lineCountEl.textContent = '0';
+          document.getElementById('pagination').style.display = 'none';
         }
       } else {
         showToast(data.error || 'Operation failed', 'error');
@@ -729,6 +843,33 @@ _TEMPLATE = r"""<!DOCTYPE html>
 
   modalOverlay.addEventListener('click', (e) => {
     if (e.target === modalOverlay) closeModal();
+  });
+
+  window.addEventListener('popstate', function() {
+    var file = getFileFromURL();
+    if (file && file !== activeFile) {
+      activeFile = file;
+      currentPage = 1;
+      document.querySelectorAll('.file-item').forEach(function(el) {
+        el.classList.toggle('active', el.dataset.file === file);
+      });
+      activeFileLabel.textContent = file;
+      logPaneHeader.style.display = 'flex';
+      updateActionButtons();
+      showLogLoader();
+      fetchLogs();
+    } else if (!file && activeFile) {
+      activeFile = '';
+      activeFileLabel.textContent = '';
+      logPaneHeader.style.display = 'none';
+      updateActionButtons();
+      container.innerHTML = '';
+      emptyState.style.display = 'flex';
+      emptyState.textContent = 'Select a log file to view';
+      container.appendChild(emptyState);
+      lineCountEl.textContent = '0';
+      document.getElementById('pagination').style.display = 'none';
+    }
   });
 
   fetchFiles();

@@ -85,15 +85,17 @@ def create_log_viewer_router(
 
     # ---- routes ---------------------------------------------------------
 
+    _html_page = render_html(
+        base_url=prefix,
+        auto_refresh=auto_refresh,
+        refresh_timer=refresh_timer,
+        auto_scroll=auto_scroll,
+        colorize=colorize,
+    )
+
     @router.get("/", response_class=HTMLResponse, dependencies=[Depends(_verify)])
     async def index():
-        return render_html(
-            base_url=prefix,
-            auto_refresh=auto_refresh,
-            refresh_timer=refresh_timer,
-            auto_scroll=auto_scroll,
-            colorize=colorize,
-        )
+        return _html_page
 
     @router.get("/api/files", dependencies=[Depends(_verify)])
     async def api_files():
@@ -106,8 +108,9 @@ def create_log_viewer_router(
         lines: int = Query(500),
         level: str = Query(""),
         search: str = Query(""),
+        page: int = Query(1),
     ):
-        return reader.read(file=file, lines=lines, level=level, search=search)
+        return reader.read(file=file, lines=lines, level=level, search=search, page=page)
 
     @router.delete("/api/file", dependencies=[Depends(_verify)])
     async def api_delete(file: str = Query("")):
@@ -120,5 +123,10 @@ def create_log_viewer_router(
         if directory.clear_file(file):
             return {"success": True, "message": f"{os.path.basename(file)} cleared"}
         return JSONResponse({"success": False, "error": "Invalid or missing file"}, status_code=404)
+
+    # Catch-all for deep-link support (e.g. /logs/workers/celery.log)
+    @router.get("/{file_path:path}", response_class=HTMLResponse, dependencies=[Depends(_verify)])
+    async def index_with_file(file_path: str):
+        return _html_page
 
     return router

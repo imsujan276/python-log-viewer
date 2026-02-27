@@ -86,11 +86,19 @@ def _basic_auth_required(view_func):
 
 @_basic_auth_required
 @require_GET
-def log_viewer_page(request):
-    """Serve the log viewer HTML page."""
-    # Read the URL prefix from the request path
-    # (strip trailing /api/... or trailing / to get the mount point)
-    prefix = request.path.rstrip("/")
+def log_viewer_page(request, file_path=None):
+    """Serve the log viewer HTML page.
+
+    *file_path* is optionally captured by the catch-all URL pattern so
+    that direct links like ``/logs/workers/celery.log`` work on refresh.
+    The client-side JS reads the path from the URL to restore state.
+    """
+    prefix = request.path
+    if file_path:
+        suffix = "/" + file_path
+        if prefix.endswith(suffix):
+            prefix = prefix[: -len(suffix)]
+    prefix = prefix.rstrip("/")
 
     html = render_html(
         base_url=prefix,
@@ -125,6 +133,7 @@ def get_log_content(request):
             lines=int(request.GET.get("lines", "500")),
             level=request.GET.get("level", ""),
             search=request.GET.get("search", ""),
+            page=int(request.GET.get("page", "1")),
         )
         return JsonResponse(result)
     except Exception as e:
