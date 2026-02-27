@@ -105,9 +105,24 @@ class LogReader:
 
     _LEVEL_KEYWORDS = frozenset({"INFO", "WARNING", "ERROR", "DEBUG", "CRITICAL"})
     _MAX_READ_BYTES = 5 * 1024 * 1024  # 5 MB
+    _TAIL_BYTES_PER_REQUESTED_LINE = 500
 
     def __init__(self, log_dir: LogDirectory) -> None:
         self.log_dir = log_dir
+
+    @classmethod
+    def _is_new_entry_start(cls, line: str) -> bool:
+        """Return True when *line* looks like a new log entry prefix."""
+        if not line:
+            return False
+        if line[0].isdigit():
+            return True
+        token = line.split()[0]
+        if token in cls._LEVEL_KEYWORDS:
+            return True
+        if token.startswith("[") and token.endswith("]"):
+            return token[1:-1] in cls._LEVEL_KEYWORDS
+        return False
 
     # ------------------------------------------------------------------
     # Efficient file reading
@@ -135,7 +150,7 @@ class LogReader:
         self,
         file: str,
         *,
-        lines: int = 500,
+        lines: int = 100,
         level: str = "",
         search: str = "",
         page: int = 1,
@@ -156,9 +171,20 @@ class LogReader:
 
         try:
             if lines > 0:
-                # Read enough bytes from the tail for the requested pages
-                read_bytes = max(page * lines * 500, self._MAX_READ_BYTES)
+                # Read enough bytes from the tail for the requested pages.
+                # Some logs have very long single-line JSON entries, so we
+                # grow the tail window until we have at least one page worth
+                # of physical lines (or we reach the full file).
+                file_size = os.path.getsize(resolved)
+                read_bytes = max(
+                    page * lines * self._TAIL_BYTES_PER_REQUESTED_LINE,
+                    self._MAX_READ_BYTES,
+                )
+                read_bytes = min(read_bytes, file_size)
                 raw_lines = self._read_tail(resolved, read_bytes)
+                while read_bytes < file_size and len(raw_lines) <= page * lines:
+                    read_bytes = min(read_bytes * 2, file_size)
+                    raw_lines = self._read_tail(resolved, read_bytes)
             else:
                 with open(resolved, "r", encoding="utf-8") as fh:
                     raw_lines = fh.readlines()
@@ -169,10 +195,7 @@ class LogReader:
         entries: list[str] = []
         for line in raw_lines:
             stripped = line.rstrip()
-            if stripped and (
-                stripped[0].isdigit()
-                or stripped.split()[0] in self._LEVEL_KEYWORDS
-            ):
+            if self._is_new_entry_start(stripped):
                 entries.append(stripped)
             elif entries:
                 entries[-1] += "\n" + stripped

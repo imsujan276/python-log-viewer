@@ -35,6 +35,7 @@ LOG_VIEWER_AUTO_REFRESH = True
 LOG_VIEWER_REFRESH_TIMER = 5000  # milliseconds
 LOG_VIEWER_AUTO_SCROLL = True
 LOG_VIEWER_COLORIZE = True
+LOG_VIEWER_DEFAULT_LINES = 100
 
 # Authentication (comment out to disable)
 LOG_VIEWER_USERNAME = "admin"

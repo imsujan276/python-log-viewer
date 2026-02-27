@@ -25,6 +25,16 @@ from typing import Optional
 from python_log_viewer.core import LogDirectory, LogReader
 from python_log_viewer._html import render_html
 
+_ALLOWED_DEFAULT_LINES = {0, 100, 250, 500, 1000}
+
+
+def _normalize_default_lines(value: int) -> int:
+    try:
+        value_int = int(value)
+    except (TypeError, ValueError):
+        return 100
+    return value_int if value_int in _ALLOWED_DEFAULT_LINES else 100
+
 
 def create_log_viewer_router(
     log_dir: str = "./logs",
@@ -35,6 +45,7 @@ def create_log_viewer_router(
     refresh_timer: int = 5000,
     auto_scroll: bool = True,
     colorize: bool = True,
+    default_lines: int = 100,
 ):
     """Create and return a FastAPI :class:`~fastapi.APIRouter`.
 
@@ -46,7 +57,7 @@ def create_log_viewer_router(
         URL prefix to mount the router at (e.g. ``/logs``).
     username / password:
         Enable HTTP Basic Auth when both are provided.
-    auto_refresh / refresh_timer / auto_scroll / colorize:
+    auto_refresh / refresh_timer / auto_scroll / colorize / default_lines:
         UI defaults.
     """
     from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -60,6 +71,7 @@ def create_log_viewer_router(
     directory = LogDirectory(log_dir)
     reader = LogReader(directory)
     router = APIRouter(prefix=prefix, tags=["python-log-viewer"])
+    default_lines = _normalize_default_lines(default_lines)
 
     # ---- auth dependency ------------------------------------------------
 
@@ -91,6 +103,7 @@ def create_log_viewer_router(
         refresh_timer=refresh_timer,
         auto_scroll=auto_scroll,
         colorize=colorize,
+        default_lines=default_lines,
     )
 
     @router.get("/", response_class=HTMLResponse, dependencies=[Depends(_verify)])
@@ -105,7 +118,7 @@ def create_log_viewer_router(
     @router.get("/api/content", dependencies=[Depends(_verify)])
     async def api_content(
         file: str = Query("app.log"),
-        lines: int = Query(500),
+        lines: int = Query(default_lines),
         level: str = Query(""),
         search: str = Query(""),
         page: int = Query(1),

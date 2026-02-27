@@ -8,6 +8,7 @@ Settings (all optional, set in ``settings.py``)::
     LOG_VIEWER_REFRESH_TIMER    = 5000  # ms
     LOG_VIEWER_AUTO_SCROLL      = True
     LOG_VIEWER_COLORIZE         = True
+    LOG_VIEWER_DEFAULT_LINES    = 100   # one of: 100, 250, 500, 1000, 0 (all)
     LOG_VIEWER_USERNAME         = None  # set both to enable Basic Auth
     LOG_VIEWER_PASSWORD         = None
     LOG_VIEWER_SUPERUSER_ACCESS = True  # allow Django superusers without Basic Auth
@@ -28,6 +29,9 @@ from python_log_viewer.core import LogDirectory, LogReader
 from python_log_viewer._html import render_html
 
 
+_ALLOWED_DEFAULT_LINES = {0, 100, 250, 500, 1000}
+
+
 # ---------------------------------------------------------------------------
 # Lazy singletons – created once, reused across requests.
 # ---------------------------------------------------------------------------
@@ -41,6 +45,15 @@ def _get_log_dir() -> LogDirectory:
 
 def _get_reader() -> LogReader:
     return LogReader(_get_log_dir())
+
+
+def _get_default_lines() -> int:
+    value = getattr(settings, "LOG_VIEWER_DEFAULT_LINES", 100)
+    try:
+        value_int = int(value)
+    except (TypeError, ValueError):
+        return 100
+    return value_int if value_int in _ALLOWED_DEFAULT_LINES else 100
 
 
 # ---------------------------------------------------------------------------
@@ -106,6 +119,7 @@ def log_viewer_page(request, file_path=None):
         refresh_timer=getattr(settings, "LOG_VIEWER_REFRESH_TIMER", 5000),
         auto_scroll=getattr(settings, "LOG_VIEWER_AUTO_SCROLL", True),
         colorize=getattr(settings, "LOG_VIEWER_COLORIZE", True),
+        default_lines=_get_default_lines(),
     )
     return HttpResponse(html, content_type="text/html")
 
@@ -130,7 +144,7 @@ def get_log_content(request):
     try:
         result = _get_reader().read(
             file=request.GET.get("file", "app.log"),
-            lines=int(request.GET.get("lines", "500")),
+            lines=int(request.GET.get("lines", str(_get_default_lines()))),
             level=request.GET.get("level", ""),
             search=request.GET.get("search", ""),
             page=int(request.GET.get("page", "1")),

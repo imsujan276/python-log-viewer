@@ -86,6 +86,7 @@ LOG_VIEWER_AUTO_REFRESH  = True    # enable auto-refresh
 LOG_VIEWER_REFRESH_TIMER = 5000    # refresh interval in ms
 LOG_VIEWER_AUTO_SCROLL   = True    # auto-scroll to bottom
 LOG_VIEWER_COLORIZE      = True    # colour-coded log levels
+LOG_VIEWER_DEFAULT_LINES = 100     # default line limit (100, 250, 500, 1000, 0=all)
 
 # Authentication (optional — leave unset to disable)
 LOG_VIEWER_USERNAME = "admin"
@@ -142,6 +143,7 @@ Then visit `http://localhost:5000/logs/` in your browser.
 | `refresh_timer` | `5000` | Refresh interval (ms) |
 | `auto_scroll` | `True` | Auto-scroll to bottom |
 | `colorize` | `True` | Colour-coded levels |
+| `default_lines` | `100` | Default line limit (100, 250, 500, 1000, 0=all) |
 
 ---
 
@@ -185,6 +187,7 @@ Then visit `http://localhost:8000/logs/` in your browser.
 | `refresh_timer` | `5000` | Refresh interval (ms) |
 | `auto_scroll` | `True` | Auto-scroll to bottom |
 | `colorize` | `True` | Colour-coded levels |
+| `default_lines` | `100` | Default line limit (100, 250, 500, 1000, 0=all) |
 
 ---
 

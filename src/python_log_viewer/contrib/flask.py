@@ -26,6 +26,16 @@ from typing import Optional
 from python_log_viewer.core import LogDirectory, LogReader
 from python_log_viewer._html import render_html
 
+_ALLOWED_DEFAULT_LINES = {0, 100, 250, 500, 1000}
+
+
+def _normalize_default_lines(value: int) -> int:
+    try:
+        value_int = int(value)
+    except (TypeError, ValueError):
+        return 100
+    return value_int if value_int in _ALLOWED_DEFAULT_LINES else 100
+
 
 def create_log_viewer_blueprint(
     log_dir: str = "./logs",
@@ -36,6 +46,7 @@ def create_log_viewer_blueprint(
     refresh_timer: int = 5000,
     auto_scroll: bool = True,
     colorize: bool = True,
+    default_lines: int = 100,
 ):
     """Create and return a Flask :class:`~flask.Blueprint` for the log viewer.
 
@@ -47,7 +58,7 @@ def create_log_viewer_blueprint(
         URL prefix to mount the blueprint at (e.g. ``/logs``).
     username / password:
         Enable HTTP Basic Auth when both are provided.
-    auto_refresh / refresh_timer / auto_scroll / colorize:
+    auto_refresh / refresh_timer / auto_scroll / colorize / default_lines:
         UI defaults.
     """
     from flask import Blueprint, jsonify, request, Response
@@ -57,6 +68,7 @@ def create_log_viewer_blueprint(
     directory = LogDirectory(log_dir)
     reader = LogReader(directory)
     bp = Blueprint("log_viewer", __name__, url_prefix=url_prefix)
+    default_lines = _normalize_default_lines(default_lines)
 
     # ---- auth decorator -------------------------------------------------
 
@@ -82,6 +94,7 @@ def create_log_viewer_blueprint(
         refresh_timer=refresh_timer,
         auto_scroll=auto_scroll,
         colorize=colorize,
+        default_lines=default_lines,
     )
 
     @bp.route("/", methods=["GET"])
@@ -100,7 +113,7 @@ def create_log_viewer_blueprint(
     def api_content():
         result = reader.read(
             file=request.args.get("file", "app.log"),
-            lines=int(request.args.get("lines", "500")),
+            lines=int(request.args.get("lines", str(default_lines))),
             level=request.args.get("level", ""),
             search=request.args.get("search", ""),
             page=int(request.args.get("page", "1")),

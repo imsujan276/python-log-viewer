@@ -420,11 +420,11 @@ _TEMPLATE = r"""<!DOCTYPE html>
       <option value="ERROR">ERROR</option>
     </select>
     <select id="lines-limit">
-      <option value="500" selected>Last 500</option>
-      <option value="1000">Last 1000</option>
-      <option value="2500">Last 2500</option>
-      <option value="5000">Last 5000</option>
-      <option value="0">All</option>
+      <option value="100" {{LINES_100_SELECTED}}>Last 100</option>
+      <option value="250" {{LINES_250_SELECTED}}>Last 250</option>
+      <option value="500" {{LINES_500_SELECTED}}>Last 500</option>
+      <option value="1000" {{LINES_1000_SELECTED}}>Last 1000</option>
+      <option value="0" {{LINES_0_SELECTED}}>All</option>
     </select>
     <select id="refresh-interval">
       <option value="5000" {{REFRESH_5000_SELECTED}}>Refresh: 5s</option>
@@ -886,6 +886,7 @@ def render_html(
     refresh_timer: int = 5000,
     auto_scroll: bool = True,
     colorize: bool = True,
+    default_lines: int = 100,
 ) -> str:
     """Return the complete HTML page with placeholders filled in.
 
@@ -901,13 +902,23 @@ def render_html(
         Whether to auto-scroll to the bottom on refresh.
     colorize:
         Whether to show coloured log-level backgrounds.
+    default_lines:
+        Default line-limit option shown in the UI. Supported values:
+        ``100``, ``250``, ``500``, ``1000``, ``0`` (all).
     """
     selected = str(refresh_timer) if auto_refresh else "0"
+    allowed_line_limits = {"0", "100", "250", "500", "1000"}
+    selected_lines = str(default_lines)
+    if selected_lines not in allowed_line_limits:
+        selected_lines = "100"
 
     html = _TEMPLATE
     for val in ("0", "1000", "3000", "5000", "10000", "30000", "60000"):
         placeholder = "{{REFRESH_%s_SELECTED}}" % val
         html = html.replace(placeholder, "selected" if selected == val else "")
+    for val in ("0", "100", "250", "500", "1000"):
+        placeholder = "{{LINES_%s_SELECTED}}" % val
+        html = html.replace(placeholder, "selected" if selected_lines == val else "")
 
     html = html.replace("{{AUTO_SCROLL_CHECKED}}", "checked" if auto_scroll else "")
     html = html.replace("{{BODY_CLASS}}", "colorize" if colorize else "")
