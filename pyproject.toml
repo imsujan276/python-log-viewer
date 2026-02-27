@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "python-log-viewer"
-version = "1.1.0"
+version = "1.1.1"
 description = "A beautiful, real-time log viewer with a web UI. Works with Django, Flask, and FastAPI."
 readme = "README.md"
 license = { text = "MIT" }
