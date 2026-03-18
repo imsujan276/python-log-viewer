@@ -36,10 +36,10 @@ pip install python-log-viewer
 ### Framework extras
 
 ```bash
-pip install python-log-viewer[django]    # Django integration
-pip install python-log-viewer[flask]     # Flask integration
-pip install python-log-viewer[fastapi]   # FastAPI integration
-pip install python-log-viewer[all]       # All frameworks
+pip install "python-log-viewer[django]"    # Django integration
+pip install "python-log-viewer[flask]"     # Flask integration
+pip install "python-log-viewer[fastapi]"   # FastAPI integration
+pip install "python-log-viewer[all]"       # All frameworks
 ```
 
 ---
@@ -49,7 +49,7 @@ pip install python-log-viewer[all]       # All frameworks
 ### 1. Install
 
 ```bash
-pip install python-log-viewer[django]
+pip install "python-log-viewer[django]"
 ```
 
 ### 2. Add to `INSTALLED_APPS`
@@ -105,7 +105,7 @@ Then visit `http://localhost:8000/logs/` in your browser.
 ### 1. Install
 
 ```bash
-pip install python-log-viewer[flask]
+pip install "python-log-viewer[flask]"
 ```
 
 ### 2. Register the blueprint
@@ -152,7 +152,7 @@ Then visit `http://localhost:5000/logs/` in your browser.
 ### 1. Install
 
 ```bash
-pip install python-log-viewer[fastapi]
+pip install "python-log-viewer[fastapi]"
 ```
 
 ### 2. Include the router
